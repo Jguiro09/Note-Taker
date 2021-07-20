@@ -32,6 +32,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const db = require('./db/db.json');
 
 const app = express();
 const PORT = 8080;
@@ -42,47 +43,28 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get("/api/notes", (req, res) => {
     console.log(`Hitting the API/Notes Route`);
-    fs.readFile("./db/db.json", "utf8", (err, data) => {
-        if (err) throw err;
-
-        res.send(JSON.parse(data));
-    })
+    res.json(db);
 })
 
 app.post("/api/notes", (req, res) => {
     console.log(`Hitting the API/Notes Route (with post request)`);
 
-    fs.readFile("./db/db.json", "utf8", (err, data) => {
-        if (err) throw err;
-
-        let totalNotes = JSON.parse(data);
         let newNote = req.body;
         newNote.id = uuidv4();
-        console.log(newNote);
-        totalNotes.push(newNote);
-        fs.writeFile("db/db.json", JSON.stringify(totalNotes), (err) => {
+        db.push(newNote);
+        fs.writeFileSync("./db/db.json", JSON.stringify(db), (err) => {
             if(err) throw err;
-        })
-
-        res.send(totalNotes);
-    })
+        });
+        res.send(db)
 })
 
 app.delete("/api/notes/:id", (req, res) => {
-    fs.readFile("./db/db.json", "utf8", (err, data) => {
-        if (err) throw err;
-
-        let totalNotes = JSON.parse(data);
-
-        totalNotes.splice(req.params.id, 1);
-        console.log(req.params.id);
-        fs.writeFile("db/db.json", JSON.stringify(totalNotes), (err) => {
+        db.splice(req.params.id, 1);
+        fs.writeFile("db/db.json", JSON.stringify(db), (err) => {
             if(err) throw err;
         })
-
-        res.send(totalNotes);
-    })
-}) 
+        res.send(db)
+})
 
 app.get('/notes', (req, res) => res.sendFile(path.join(__dirname, '/public/notes.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '/public/index.html')));
